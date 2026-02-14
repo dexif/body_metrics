@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import re
 from datetime import timedelta
 from typing import Any
 
@@ -46,6 +47,16 @@ _LOGGER = logging.getLogger(__name__)
 
 _UNAVAILABLE_STATES = {"unknown", "unavailable"}
 
+_NUM_RE = re.compile(r"^[\s]*([-+]?\d*\.?\d+)")
+
+
+def _parse_float(value: str) -> float | None:
+    """Parse a float from a string that may contain units (e.g. '75.5 kg')."""
+    match = _NUM_RE.match(value)
+    if match:
+        return float(match.group(1))
+    return None
+
 
 class ScaleCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     """Coordinator that reads scale sensors and computes body metrics."""
@@ -72,9 +83,8 @@ class ScaleCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         if not weight_state or weight_state.state in _UNAVAILABLE_STATES:
             return self.data or {"people": {}}
 
-        try:
-            weight = float(weight_state.state)
-        except (ValueError, TypeError):
+        weight = _parse_float(weight_state.state)
+        if weight is None:
             _LOGGER.debug("Cannot parse weight state: %s", weight_state.state)
             return self.data or {"people": {}}
 
@@ -82,9 +92,8 @@ class ScaleCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         if imp_entity:
             imp_state = self.hass.states.get(imp_entity)
             if imp_state and imp_state.state not in _UNAVAILABLE_STATES:
-                try:
-                    impedance = float(imp_state.state)
-                except (ValueError, TypeError):
+                impedance = _parse_float(imp_state.state)
+                if impedance is None:
                     _LOGGER.debug(
                         "Cannot parse impedance state: %s", imp_state.state
                     )
