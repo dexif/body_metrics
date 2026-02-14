@@ -183,7 +183,7 @@ class BodyMetricsOptionsFlow(OptionsFlow):
                     CONF_PERSON_HEIGHT, default=d.get(CONF_PERSON_HEIGHT, 170)
                 ): NumberSelector(
                     NumberSelectorConfig(
-                        min=100,
+                        min=50,
                         max=250,
                         step=1,
                         unit_of_measurement="cm",
@@ -217,7 +217,7 @@ class BodyMetricsOptionsFlow(OptionsFlow):
                     default=d.get(CONF_PERSON_EXPECTED_WEIGHT, 70.0),
                 ): NumberSelector(
                     NumberSelectorConfig(
-                        min=20,
+                        min=3,
                         max=300,
                         step=0.1,
                         unit_of_measurement="kg",
