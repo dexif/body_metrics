@@ -1,0 +1,11 @@
+{
+  "domain": "body_metrics",
+  "name": "Body Metrics",
+  "version": "1.0.0",
+  "documentation": "https://github.com/spevnern/body-metrics",
+  "issue_tracker": "https://github.com/spevnern/body-metrics/issues",
+  "requirements": [],
+  "codeowners": [],
+  "iot_class": "local_polling",
+  "config_flow": true
+}

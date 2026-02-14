@@ -1,0 +1,106 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Body Metrics",
+        "description": "Select the sensors from your body scale.",
+        "data": {
+          "weight_sensor": "Weight sensor",
+          "impedance_sensor": "Impedance sensor"
+        },
+        "data_description": {
+          "impedance_sensor": "Optional. Required for body fat, muscle mass, water and bone mass calculations."
+        }
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "menu_options": {
+          "add_person": "Add person",
+          "edit_person": "Edit person",
+          "remove_person": "Remove person",
+          "done": "Done"
+        }
+      },
+      "add_person": {
+        "title": "Add person",
+        "data": {
+          "name": "Name",
+          "height_cm": "Height",
+          "age": "Age",
+          "sex": "Sex",
+          "expected_weight": "Expected weight",
+          "expected_impedance": "Expected impedance",
+          "tolerance": "Tolerance"
+        },
+        "data_description": {
+          "expected_weight": "The typical weight of this person in kg.",
+          "expected_impedance": "The typical impedance reading for this person.",
+          "tolerance": "How closely a reading must match to be assigned to this person."
+        }
+      },
+      "edit_person": {
+        "title": "Select person to edit",
+        "data": {
+          "person": "Person"
+        }
+      },
+      "edit_person_form": {
+        "title": "Edit person",
+        "data": {
+          "name": "Name",
+          "height_cm": "Height",
+          "age": "Age",
+          "sex": "Sex",
+          "expected_weight": "Expected weight",
+          "expected_impedance": "Expected impedance",
+          "tolerance": "Tolerance"
+        },
+        "data_description": {
+          "expected_weight": "The typical weight of this person in kg.",
+          "expected_impedance": "The typical impedance reading for this person.",
+          "tolerance": "How closely a reading must match to be assigned to this person."
+        }
+      },
+      "remove_person": {
+        "title": "Remove person",
+        "data": {
+          "person": "Person"
+        }
+      }
+    },
+    "error": {
+      "name_exists": "A person with this name already exists."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "weight": {
+        "name": "Weight"
+      },
+      "impedance": {
+        "name": "Impedance"
+      },
+      "bmi": {
+        "name": "BMI"
+      },
+      "body_fat": {
+        "name": "Body fat"
+      },
+      "muscle_mass": {
+        "name": "Muscle mass"
+      },
+      "water_pct": {
+        "name": "Water"
+      },
+      "bone_mass": {
+        "name": "Bone mass"
+      },
+      "confidence": {
+        "name": "Confidence"
+      }
+    }
+  }
+}
