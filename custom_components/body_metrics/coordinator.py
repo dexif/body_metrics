@@ -38,7 +38,10 @@ from .const import (
     DEFAULT_EMA_ALPHA,
     DEFAULT_TOLERANCE,
     DOMAIN,
+    EVENT_GUEST_MEASUREMENT,
     EVENT_MEASUREMENT,
+    GUEST_MIN_WEIGHT,
+    GUEST_SLUG,
     SENSOR_KEY_BMI,
     SENSOR_KEY_BMR,
     SENSOR_KEY_BODY_FAT,
@@ -288,5 +291,25 @@ class ScaleCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             )
 
             result["people"][slug] = person_data
+
+        elif weight >= GUEST_MIN_WEIGHT:
+            slug = GUEST_SLUG
+            guest_data: dict[str, Any] = {
+                SENSOR_KEY_WEIGHT: round(weight, 2),
+                SENSOR_KEY_IMPEDANCE: round(impedance, 1) if impedance is not None else None,
+            }
+
+            # Detect new guest measurement
+            prev_weight = self._last_matched.get(slug)
+            now = datetime.now(timezone.utc)
+            if prev_weight is None or abs(weight - prev_weight) > 0.1:
+                self._last_matched[slug] = weight
+                self.hass.bus.async_fire(
+                    EVENT_GUEST_MEASUREMENT,
+                    {"entry_id": self.entry.entry_id, **{k: v for k, v in guest_data.items() if v is not None}},
+                )
+
+            guest_data[SENSOR_KEY_LAST_MEASUREMENT] = now.isoformat()
+            result["people"][slug] = guest_data
 
         return result

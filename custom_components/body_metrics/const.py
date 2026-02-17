@@ -49,6 +49,12 @@ STORAGE_VERSION = 1
 # Events
 EVENT_MEASUREMENT = "body_metrics_measurement"
 
+# Guest
+GUEST_SLUG = "guest"
+GUEST_NAME = "Guest"
+EVENT_GUEST_MEASUREMENT = "body_metrics_guest_measurement"
+GUEST_MIN_WEIGHT = 10.0  # ignore readings under 10 kg (noise / pets)
+
 # Defaults
 DEFAULT_TOLERANCE = 8
 DEFAULT_EMA_ALPHA = 0.2

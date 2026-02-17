@@ -24,6 +24,8 @@ from .const import (
     CONF_PEOPLE,
     CONF_PERSON_NAME,
     DOMAIN,
+    GUEST_NAME,
+    GUEST_SLUG,
     SENSOR_KEY_BMI,
     SENSOR_KEY_BMR,
     SENSOR_KEY_BODY_FAT,
@@ -174,6 +176,12 @@ SENSOR_DESCRIPTIONS: tuple[SensorEntityDescription, ...] = (
 )
 
 
+GUEST_SENSOR_DESCRIPTIONS: tuple[SensorEntityDescription, ...] = tuple(
+    d for d in SENSOR_DESCRIPTIONS
+    if d.key in (SENSOR_KEY_WEIGHT, SENSOR_KEY_IMPEDANCE, SENSOR_KEY_LAST_MEASUREMENT)
+)
+
+
 async def async_setup_entry(
     hass: HomeAssistant,
     entry: ConfigEntry,
@@ -192,6 +200,11 @@ async def async_setup_entry(
             entities.append(
                 BodyMetricsSensor(coordinator, entry, desc, person_slug, person_name)
             )
+
+    for desc in GUEST_SENSOR_DESCRIPTIONS:
+        entities.append(
+            BodyMetricsSensor(coordinator, entry, desc, GUEST_SLUG, GUEST_NAME)
+        )
 
     async_add_entities(entities)
 
