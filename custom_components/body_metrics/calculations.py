@@ -19,7 +19,8 @@ def _lbm_coefficient(
     lbm += weight * 0.32 + 12.226
     lbm -= impedance * 0.0068
     lbm -= age * 0.0542
-    return lbm
+    # LBM cannot exceed body weight
+    return min(lbm, weight * 0.95)
 
 
 def calc_body_fat_pct(
@@ -49,10 +50,10 @@ def calc_bone_mass(
     else:
         bone -= 0.1
 
-    if sex == "male":
-        bone = max(1.5, min(5.1, bone))
-    else:
-        bone = max(0.8, min(4.2, bone))
+    # Clamp: bone mass cannot exceed 15% of body weight
+    max_bone = min(5.1 if sex == "male" else 4.2, weight * 0.15)
+    min_bone = max(0.1, weight * 0.01)
+    bone = max(min_bone, min(max_bone, bone))
 
     return round(bone, 1)
 
@@ -65,10 +66,8 @@ def calc_muscle_mass(
     bone = calc_bone_mass(weight, height_cm, age, sex, impedance)
     muscle = weight - ((fat_pct / 100) * weight) - bone
 
-    if sex == "male":
-        muscle = max(30.0, min(120.0, muscle))
-    else:
-        muscle = max(20.0, min(100.0, muscle))
+    # Clamp: muscle mass must stay within reasonable ratio of body weight
+    muscle = max(weight * 0.25, min(weight * 0.75, muscle))
 
     return round(muscle, 1)
 
