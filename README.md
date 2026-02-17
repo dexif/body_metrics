@@ -7,10 +7,12 @@ Home Assistant custom integration for smart body scales. Identifies household me
 
 ## Features
 
-- **Per-person tracking** — each person gets their own device with 8 sensors
-- **Body composition** — weight, BMI, body fat %, muscle mass, water %, bone mass
+- **Per-person tracking** — each person gets their own device with 15 sensors
+- **Body composition** — weight, BMI, body fat %, muscle mass, water %, bone mass, BMR, visceral fat, ideal weight, body type
+- **Weight trends** — weekly and monthly weight change tracking with persistent history
 - **Smart matching** — weighted score algorithm assigns readings to the right person
 - **EMA smoothing** — exponential moving average filters out noisy readings
+- **Events** — fires `body_metrics_measurement` event on each new reading for automations
 - **Menu-based setup** — add, edit, remove people through the UI
 - **HACS-ready** — install as a custom repository
 
@@ -26,6 +28,13 @@ Home Assistant custom integration for smart body scales. Identifies household me
 | Water | % | Body water percentage (requires impedance) |
 | Bone mass | kg | Bone mineral mass (requires impedance) |
 | Confidence | % | How closely the reading matched this person |
+| Basal metabolic rate | kcal | BMR via Mifflin-St Jeor formula |
+| Visceral fat | level | Visceral fat rating, scale 1–59 |
+| Ideal weight | kg | Ideal weight via Devine formula |
+| Body type | — | Classification (e.g. Balanced, Overweight, Skinny-muscular) |
+| Last measurement | timestamp | When the last reading was recorded |
+| Weight trend (week) | kg | Weight change over the past ~7 days |
+| Weight trend (month) | kg | Weight change over the past ~30 days |
 
 ## Installation
 

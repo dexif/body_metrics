@@ -34,6 +34,20 @@ SENSOR_KEY_MUSCLE_MASS = "muscle_mass"
 SENSOR_KEY_WATER_PCT = "water_pct"
 SENSOR_KEY_BONE_MASS = "bone_mass"
 SENSOR_KEY_CONFIDENCE = "confidence"
+SENSOR_KEY_BMR = "bmr"
+SENSOR_KEY_VISCERAL_FAT = "visceral_fat"
+SENSOR_KEY_IDEAL_WEIGHT = "ideal_weight"
+SENSOR_KEY_BODY_TYPE = "body_type"
+SENSOR_KEY_LAST_MEASUREMENT = "last_measurement"
+SENSOR_KEY_WEIGHT_TREND_WEEK = "weight_trend_week"
+SENSOR_KEY_WEIGHT_TREND_MONTH = "weight_trend_month"
+
+# Storage
+STORAGE_KEY = "body_metrics.history"
+STORAGE_VERSION = 1
+
+# Events
+EVENT_MEASUREMENT = "body_metrics_measurement"
 
 # Defaults
 DEFAULT_TOLERANCE = 8

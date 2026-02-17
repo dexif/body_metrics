@@ -6,8 +6,9 @@ import logging
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.storage import Store
 
-from .const import DOMAIN, PLATFORMS
+from .const import DOMAIN, PLATFORMS, STORAGE_KEY, STORAGE_VERSION
 from .coordinator import ScaleCoordinator
 
 _LOGGER = logging.getLogger(__name__)
@@ -15,7 +16,9 @@ _LOGGER = logging.getLogger(__name__)
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up Body Metrics from a config entry."""
-    coordinator = ScaleCoordinator(hass, entry)
+    store = Store(hass, STORAGE_VERSION, STORAGE_KEY)
+    coordinator = ScaleCoordinator(hass, entry, store)
+    await coordinator.async_load_history()
     await coordinator.async_config_entry_first_refresh()
 
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = coordinator

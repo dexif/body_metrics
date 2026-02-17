@@ -100,6 +100,27 @@
       },
       "confidence": {
         "name": "Confidence"
+      },
+      "bmr": {
+        "name": "Basal metabolic rate"
+      },
+      "visceral_fat": {
+        "name": "Visceral fat"
+      },
+      "ideal_weight": {
+        "name": "Ideal weight"
+      },
+      "body_type": {
+        "name": "Body type"
+      },
+      "last_measurement": {
+        "name": "Last measurement"
+      },
+      "weight_trend_week": {
+        "name": "Weight trend (week)"
+      },
+      "weight_trend_month": {
+        "name": "Weight trend (month)"
       }
     }
   }

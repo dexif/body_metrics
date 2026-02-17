@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import datetime
 from typing import Any
 
 from homeassistant.components.sensor import (
@@ -24,13 +25,20 @@ from .const import (
     CONF_PERSON_NAME,
     DOMAIN,
     SENSOR_KEY_BMI,
+    SENSOR_KEY_BMR,
     SENSOR_KEY_BODY_FAT,
+    SENSOR_KEY_BODY_TYPE,
     SENSOR_KEY_BONE_MASS,
     SENSOR_KEY_CONFIDENCE,
+    SENSOR_KEY_IDEAL_WEIGHT,
     SENSOR_KEY_IMPEDANCE,
+    SENSOR_KEY_LAST_MEASUREMENT,
     SENSOR_KEY_MUSCLE_MASS,
+    SENSOR_KEY_VISCERAL_FAT,
     SENSOR_KEY_WATER_PCT,
     SENSOR_KEY_WEIGHT,
+    SENSOR_KEY_WEIGHT_TREND_MONTH,
+    SENSOR_KEY_WEIGHT_TREND_WEEK,
 )
 from .coordinator import ScaleCoordinator
 
@@ -99,6 +107,70 @@ SENSOR_DESCRIPTIONS: tuple[SensorEntityDescription, ...] = (
         state_class=SensorStateClass.MEASUREMENT,
         suggested_display_precision=0,
     ),
+    SensorEntityDescription(
+        key=SENSOR_KEY_BMR,
+        translation_key=SENSOR_KEY_BMR,
+        native_unit_of_measurement="kcal",
+        icon="mdi:fire",
+        state_class=SensorStateClass.MEASUREMENT,
+        suggested_display_precision=0,
+    ),
+    SensorEntityDescription(
+        key=SENSOR_KEY_VISCERAL_FAT,
+        translation_key=SENSOR_KEY_VISCERAL_FAT,
+        native_unit_of_measurement="level",
+        icon="mdi:stomach",
+        state_class=SensorStateClass.MEASUREMENT,
+        suggested_display_precision=0,
+    ),
+    SensorEntityDescription(
+        key=SENSOR_KEY_IDEAL_WEIGHT,
+        translation_key=SENSOR_KEY_IDEAL_WEIGHT,
+        native_unit_of_measurement=UnitOfMass.KILOGRAMS,
+        device_class=SensorDeviceClass.WEIGHT,
+        state_class=SensorStateClass.MEASUREMENT,
+        suggested_display_precision=1,
+    ),
+    SensorEntityDescription(
+        key=SENSOR_KEY_BODY_TYPE,
+        translation_key=SENSOR_KEY_BODY_TYPE,
+        device_class=SensorDeviceClass.ENUM,
+        icon="mdi:human",
+        options=[
+            "Obese",
+            "Overweight",
+            "Thick-set",
+            "Lack of exercise",
+            "Balanced",
+            "Balanced-muscular",
+            "Skinny",
+            "Balanced-skinny",
+            "Skinny-muscular",
+        ],
+    ),
+    SensorEntityDescription(
+        key=SENSOR_KEY_LAST_MEASUREMENT,
+        translation_key=SENSOR_KEY_LAST_MEASUREMENT,
+        device_class=SensorDeviceClass.TIMESTAMP,
+    ),
+    SensorEntityDescription(
+        key=SENSOR_KEY_WEIGHT_TREND_WEEK,
+        translation_key=SENSOR_KEY_WEIGHT_TREND_WEEK,
+        native_unit_of_measurement=UnitOfMass.KILOGRAMS,
+        device_class=SensorDeviceClass.WEIGHT,
+        icon="mdi:trending-up",
+        state_class=SensorStateClass.MEASUREMENT,
+        suggested_display_precision=1,
+    ),
+    SensorEntityDescription(
+        key=SENSOR_KEY_WEIGHT_TREND_MONTH,
+        translation_key=SENSOR_KEY_WEIGHT_TREND_MONTH,
+        native_unit_of_measurement=UnitOfMass.KILOGRAMS,
+        device_class=SensorDeviceClass.WEIGHT,
+        icon="mdi:trending-up",
+        state_class=SensorStateClass.MEASUREMENT,
+        suggested_display_precision=1,
+    ),
 )
 
 
@@ -147,17 +219,25 @@ class BodyMetricsSensor(CoordinatorEntity[ScaleCoordinator], RestoreEntity, Sens
             manufacturer="Body Metrics",
             model="Body Composition",
         )
-        self._restored_value: float | None = None
+        self._restored_value: Any = None
 
     async def async_added_to_hass(self) -> None:
         """Restore last known state on startup."""
         await super().async_added_to_hass()
         last_state = await self.async_get_last_state()
         if last_state and last_state.state not in ("unknown", "unavailable", None):
-            try:
-                self._restored_value = float(last_state.state)
-            except (ValueError, TypeError):
-                self._restored_value = None
+            if self.entity_description.device_class == SensorDeviceClass.TIMESTAMP:
+                try:
+                    self._restored_value = datetime.fromisoformat(last_state.state)
+                except (ValueError, TypeError):
+                    self._restored_value = None
+            elif self.entity_description.device_class == SensorDeviceClass.ENUM:
+                self._restored_value = last_state.state
+            else:
+                try:
+                    self._restored_value = float(last_state.state)
+                except (ValueError, TypeError):
+                    self._restored_value = None
 
     @property
     def native_value(self) -> Any:
@@ -167,5 +247,11 @@ class BodyMetricsSensor(CoordinatorEntity[ScaleCoordinator], RestoreEntity, Sens
             if person_data:
                 value = person_data.get(self.entity_description.key)
                 if value is not None:
+                    if (
+                        self.entity_description.device_class
+                        == SensorDeviceClass.TIMESTAMP
+                        and isinstance(value, str)
+                    ):
+                        return datetime.fromisoformat(value)
                     return value
         return self._restored_value
