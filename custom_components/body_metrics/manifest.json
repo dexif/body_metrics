@@ -1,7 +1,7 @@
 {
   "domain": "body_metrics",
   "name": "Body Metrics",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "documentation": "https://github.com/spevnern/body-metrics",
   "issue_tracker": "https://github.com/spevnern/body-metrics/issues",
   "requirements": [],

@@ -15,6 +15,7 @@ from homeassistant.const import PERCENTAGE, UnitOfMass
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.restore_state import RestoreEntity
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.util import slugify
 
@@ -123,7 +124,7 @@ async def async_setup_entry(
     async_add_entities(entities)
 
 
-class BodyMetricsSensor(CoordinatorEntity[ScaleCoordinator], SensorEntity):
+class BodyMetricsSensor(CoordinatorEntity[ScaleCoordinator], RestoreEntity, SensorEntity):
     """Sensor for a body metric of a specific person."""
 
     _attr_has_entity_name = True
@@ -146,13 +147,25 @@ class BodyMetricsSensor(CoordinatorEntity[ScaleCoordinator], SensorEntity):
             manufacturer="Body Metrics",
             model="Body Composition",
         )
+        self._restored_value: float | None = None
+
+    async def async_added_to_hass(self) -> None:
+        """Restore last known state on startup."""
+        await super().async_added_to_hass()
+        last_state = await self.async_get_last_state()
+        if last_state and last_state.state not in ("unknown", "unavailable", None):
+            try:
+                self._restored_value = float(last_state.state)
+            except (ValueError, TypeError):
+                self._restored_value = None
 
     @property
     def native_value(self) -> Any:
-        """Return the sensor value."""
-        if not self.coordinator.data:
-            return None
-        person_data = self.coordinator.data.get("people", {}).get(self._person_slug)
-        if not person_data:
-            return None
-        return person_data.get(self.entity_description.key)
+        """Return the sensor value, falling back to restored state."""
+        if self.coordinator.data:
+            person_data = self.coordinator.data.get("people", {}).get(self._person_slug)
+            if person_data:
+                value = person_data.get(self.entity_description.key)
+                if value is not None:
+                    return value
+        return self._restored_value
