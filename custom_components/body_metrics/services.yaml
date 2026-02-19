@@ -1,0 +1,9 @@
+reassign_guest:
+  fields:
+    person:
+      required: true
+      selector:
+        text:
+    entry_id:
+      selector:
+        text:

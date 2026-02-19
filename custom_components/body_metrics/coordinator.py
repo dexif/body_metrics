@@ -9,6 +9,7 @@ from typing import Any
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.storage import Store
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from homeassistant.util import slugify
@@ -313,3 +314,129 @@ class ScaleCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             result["people"][slug] = guest_data
 
         return result
+
+    def reassign_guest(self, person_name: str) -> None:
+        """Reassign the last guest measurement to a configured person."""
+        if (
+            not self.data
+            or GUEST_SLUG not in self.data.get("people", {})
+        ):
+            raise HomeAssistantError("No guest measurement available to reassign")
+
+        guest = self.data["people"][GUEST_SLUG]
+        weight = guest.get(SENSOR_KEY_WEIGHT)
+        if weight is None:
+            raise HomeAssistantError("Guest measurement has no weight data")
+        impedance = guest.get(SENSOR_KEY_IMPEDANCE)
+
+        # Find the target person in config
+        people: list[dict[str, Any]] = self.entry.options.get(CONF_PEOPLE, [])
+        target: dict[str, Any] | None = None
+        for person in people:
+            if person.get(CONF_PERSON_NAME, "").lower() == person_name.lower():
+                target = person
+                break
+
+        if target is None:
+            raise HomeAssistantError(
+                f"Person '{person_name}' not found in configuration"
+            )
+
+        slug = slugify(target[CONF_PERSON_NAME])
+        height = int(target.get(CONF_PERSON_HEIGHT, 170))
+        age = int(target.get(CONF_PERSON_AGE, 30))
+        sex = target.get(CONF_PERSON_SEX, "male")
+
+        # EMA smoothing from this person's perspective
+        if slug not in self._smoothed:
+            self._smoothed[slug] = {}
+
+        alpha = DEFAULT_EMA_ALPHA
+        prev_w = self._smoothed[slug].get("weight", weight)
+        smoothed_weight = alpha * weight + (1 - alpha) * prev_w
+        self._smoothed[slug]["weight"] = smoothed_weight
+
+        smoothed_impedance = impedance
+        if impedance is not None:
+            prev_i = self._smoothed[slug].get("impedance", impedance)
+            smoothed_impedance = alpha * impedance + (1 - alpha) * prev_i
+            self._smoothed[slug]["impedance"] = smoothed_impedance
+
+        person_data: dict[str, Any] = {
+            SENSOR_KEY_WEIGHT: round(smoothed_weight, 2),
+            SENSOR_KEY_IMPEDANCE: (
+                round(smoothed_impedance, 1)
+                if smoothed_impedance is not None
+                else None
+            ),
+            SENSOR_KEY_BMI: calc_bmi(smoothed_weight, height),
+            SENSOR_KEY_CONFIDENCE: None,
+            SENSOR_KEY_BMR: calc_bmr(smoothed_weight, height, age, sex),
+            SENSOR_KEY_IDEAL_WEIGHT: calc_ideal_weight(height, sex),
+        }
+
+        if smoothed_impedance is not None:
+            fat_pct = calc_body_fat_pct(
+                smoothed_weight, height, age, sex, smoothed_impedance
+            )
+            muscle = calc_muscle_mass(
+                smoothed_weight, height, age, sex, smoothed_impedance
+            )
+            person_data[SENSOR_KEY_BODY_FAT] = fat_pct
+            person_data[SENSOR_KEY_MUSCLE_MASS] = muscle
+            person_data[SENSOR_KEY_WATER_PCT] = calc_water_pct(
+                smoothed_weight, height, age, sex, smoothed_impedance
+            )
+            person_data[SENSOR_KEY_BONE_MASS] = calc_bone_mass(
+                smoothed_weight, height, age, sex, smoothed_impedance
+            )
+            person_data[SENSOR_KEY_VISCERAL_FAT] = calc_visceral_fat(
+                smoothed_weight, height, age, sex
+            )
+            person_data[SENSOR_KEY_BODY_TYPE] = get_body_type(
+                fat_pct, muscle, smoothed_weight, sex
+            )
+        else:
+            person_data[SENSOR_KEY_BODY_FAT] = None
+            person_data[SENSOR_KEY_MUSCLE_MASS] = None
+            person_data[SENSOR_KEY_WATER_PCT] = None
+            person_data[SENSOR_KEY_BONE_MASS] = None
+            person_data[SENSOR_KEY_VISCERAL_FAT] = None
+            person_data[SENSOR_KEY_BODY_TYPE] = None
+
+        # Save to history
+        now = datetime.now(timezone.utc)
+        if slug not in self._history:
+            self._history[slug] = []
+        self._history[slug].append(
+            {"timestamp": now.isoformat(), "weight": round(smoothed_weight, 2)}
+        )
+        if len(self._history[slug]) > 365:
+            self._history[slug] = self._history[slug][-365:]
+        self._save_history()
+
+        # Fire event
+        self.hass.bus.async_fire(
+            EVENT_MEASUREMENT,
+            {
+                "person": slug,
+                "entry_id": self.entry.entry_id,
+                **{k: v for k, v in person_data.items() if v is not None},
+            },
+        )
+
+        person_data[SENSOR_KEY_LAST_MEASUREMENT] = now.isoformat()
+
+        # Weight trends
+        person_data[SENSOR_KEY_WEIGHT_TREND_WEEK] = self._calc_weight_trend(
+            slug, smoothed_weight, 7
+        )
+        person_data[SENSOR_KEY_WEIGHT_TREND_MONTH] = self._calc_weight_trend(
+            slug, smoothed_weight, 30
+        )
+
+        # Update person data and clear guest
+        self._last_matched[slug] = smoothed_weight
+        self.data["people"][slug] = person_data
+        del self.data["people"][GUEST_SLUG]
+        self.async_set_updated_data(self.data)

@@ -75,6 +75,22 @@
       "name_exists": "A person with this name already exists."
     }
   },
+  "services": {
+    "reassign_guest": {
+      "name": "Reassign guest measurement",
+      "description": "Reassign the last guest measurement to a configured person.",
+      "fields": {
+        "person": {
+          "name": "Person",
+          "description": "Name of the person to assign the guest measurement to."
+        },
+        "entry_id": {
+          "name": "Entry ID",
+          "description": "Config entry ID (optional, needed only with multiple scale instances)."
+        }
+      }
+    }
+  },
   "entity": {
     "sensor": {
       "weight": {

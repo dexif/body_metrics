@@ -58,3 +58,6 @@ GUEST_MIN_WEIGHT = 10.0  # ignore readings under 10 kg (noise / pets)
 # Defaults
 DEFAULT_TOLERANCE = 8
 DEFAULT_EMA_ALPHA = 0.2
+
+# Services
+SERVICE_REASSIGN_GUEST = "reassign_guest"
